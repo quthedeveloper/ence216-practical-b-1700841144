@@ -8,13 +8,93 @@ class RecordsApp extends StatelessWidget {
   const RecordsApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Student Records',
-        theme: ThemeData(
-            colorSchemeSeed: const Color(0xFF002060), useMaterial3: true),
-        home: const StudentListPage(),
-      );
+  Widget build(BuildContext context) {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF3A5FCD), 
+      brightness: Brightness.light,
+    );
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Student Attendance Records',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: colorScheme,
+        scaffoldBackgroundColor: const Color(0xFFF6F7FB),
+        appBarTheme: AppBarTheme(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: false,
+          titleTextStyle: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: colorScheme.secondary,
+          foregroundColor: Colors.white,
+          elevation: 3,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.outlineVariant),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+        listTileTheme: ListTileThemeData(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          tileColor: Colors.white,
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: colorScheme.primary,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle:
+                const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: colorScheme.primary,
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.white,
+          elevation: 1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+      home: const StudentListPage(),
+    );
+  }
 }
 
 class StudentListPage extends StatefulWidget {
@@ -94,7 +174,7 @@ class _StudentListPageState extends State<StudentListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Student Records'),
+        title: const Text('Student Attendance Records'),
         actions: [
           IconButton(
             icon: const Icon(Icons.bar_chart),
@@ -111,7 +191,6 @@ class _StudentListPageState extends State<StudentListPage> {
               decoration: const InputDecoration(
                 labelText: 'Search by name',
                 prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
               ),
               onChanged: (value) {
                 _searchTerm = value;
@@ -151,20 +230,38 @@ class _StudentListPageState extends State<StudentListPage> {
                     : _students.isEmpty
                         ? const Center(child: Text('No students yet — tap +'))
                         : ListView.builder(
-                        itemCount: _students.length,
-                        itemBuilder: (context, i) {
-                          final s = _students[i];
-                          return ListTile(
-                            leading:
-                                CircleAvatar(child: Text('${s.level ~/ 100}')),
-                            title: Text(s.fullName),
-                            subtitle: Text('${s.indexNo} · ${s.programme}'
-                                '${s.email != null && s.email!.isNotEmpty ? " · ${s.email}" : ""}'),
-                            onTap: () => _openForm(existing: s),
-                            onLongPress: () => _confirmDelete(s),
-                          );
-                        },
-                      ),
+                            itemCount: _students.length,
+                            itemBuilder: (context, i) {
+                              final s = _students[i];
+                              final scheme = Theme.of(context).colorScheme;
+                              return Card(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  leading: CircleAvatar(
+                                    backgroundColor: scheme.primaryContainer,
+                                    foregroundColor: scheme.onPrimaryContainer,
+                                    child: Text(
+                                      '${s.level ~/ 100}',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  title: Text(
+                                    s.fullName,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                  subtitle: Text('${s.indexNo} · ${s.programme}'
+                                      '${s.email != null && s.email!.isNotEmpty ? " · ${s.email}" : ""}'),
+                                  onTap: () => _openForm(existing: s),
+                                  onLongPress: () => _confirmDelete(s),
+                                ),
+                              );
+                            },
+                          ),
           ),
         ],
       ),
@@ -197,52 +294,60 @@ class _StudentListPageState extends State<StudentListPage> {
           children: [
             Text(existing == null ? 'Add Student' : 'Edit Student',
                 style: Theme.of(ctx).textTheme.titleLarge),
+            const SizedBox(height: 12),
             TextField(
                 controller: indexCtrl,
                 decoration: const InputDecoration(labelText: 'Index number')),
+            const SizedBox(height: 10),
             TextField(
                 controller: nameCtrl,
                 decoration: const InputDecoration(labelText: 'Full name')),
+            const SizedBox(height: 10),
             TextField(
                 controller: progCtrl,
                 decoration: const InputDecoration(labelText: 'Programme')),
+            const SizedBox(height: 10),
             TextField(
                 controller: levelCtrl,
                 keyboardType: TextInputType.number,
                 decoration:
                     const InputDecoration(labelText: 'Level (100–400)')),
+            const SizedBox(height: 10),
             TextField(
                 controller: emailCtrl,
                 keyboardType: TextInputType.emailAddress,
                 decoration:
                     const InputDecoration(labelText: 'Email (optional)')),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () async {
-                final student = Student(
-                  id: existing?.id,
-                  indexNo: indexCtrl.text.trim(),
-                  fullName: nameCtrl.text.trim(),
-                  programme: progCtrl.text.trim(),
-                  level: int.tryParse(levelCtrl.text) ?? 100,
-                  email: emailCtrl.text.trim().isEmpty
-                      ? null
-                      : emailCtrl.text.trim(),
-                );
-                if (existing == null) {
-                  await _dbh.insertStudent(student);
-                } else {
-                  await _dbh.updateStudent(student);
-                }
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              child: Text(existing == null ? 'Save' : 'Update'),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () async {
+                  final student = Student(
+                    id: existing?.id,
+                    indexNo: indexCtrl.text.trim(),
+                    fullName: nameCtrl.text.trim(),
+                    programme: progCtrl.text.trim(),
+                    level: int.tryParse(levelCtrl.text) ?? 100,
+                    email: emailCtrl.text.trim().isEmpty
+                        ? null
+                        : emailCtrl.text.trim(),
+                  );
+                  if (existing == null) {
+                    await _dbh.insertStudent(student);
+                  } else {
+                    await _dbh.updateStudent(student);
+                  }
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                child: Text(existing == null ? 'Save' : 'Update'),
+              ),
             ),
           ],
         ),
       ),
     );
-    _refresh(); // re-query the DB, then setState()
+    _refresh(); 
   }
 
   Future<void> _confirmDelete(Student s) async {
