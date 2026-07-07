@@ -1,35 +1,35 @@
-class Student {
+class Book {
   final int? id; // null until SQLite assigns it
-  final String indexNo;
-  final String fullName;
-  final String programme;
-  final int level;
-  final String? email; // added in schema version 2 (migration challenge)
+  final String title;
+  final String author;
+  final String genre;
+  final int year;
+  final bool isRead; // added in schema version 2 (migration challenge)
 
-  const Student({
+  const Book({
     this.id,
-    required this.indexNo,
-    required this.fullName,
-    required this.programme,
-    required this.level,
-    this.email,
+    required this.title,
+    required this.author,
+    required this.genre,
+    required this.year,
+    this.isRead = false,
   });
 
   Map<String, dynamic> toMap() => {
         'id': id,
-        'indexNo': indexNo,
-        'fullName': fullName,
-        'programme': programme,
-        'level': level,
-        'email': email,
+        'title': title,
+        'author': author,
+        'genre': genre,
+        'year': year,
+        'isRead': isRead ? 1 : 0, // SQLite has no bool type — stored as 0/1
       };
 
-  factory Student.fromMap(Map<String, dynamic> m) => Student(
+  factory Book.fromMap(Map<String, dynamic> m) => Book(
         id: m['id'] as int?,
-        indexNo: m['indexNo'] as String,
-        fullName: m['fullName'] as String,
-        programme: m['programme'] as String,
-        level: m['level'] as int,
-        email: m['email'] as String?,
+        title: m['title'] as String,
+        author: m['author'] as String,
+        genre: m['genre'] as String,
+        year: m['year'] as int,
+        isRead: (m['isRead'] as int) == 1,
       );
 }

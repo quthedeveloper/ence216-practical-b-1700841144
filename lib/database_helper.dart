@@ -1,17 +1,17 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-import 'student.dart';
+import './student.dart';
 
 class DatabaseHelper {
-  DatabaseHelper._(); // private constructor
+  DatabaseHelper._();
 
   static final DatabaseHelper instance = DatabaseHelper._();
 
   static Database? _db;
 
   Future<Database> get database async {
-    _db ??= await _init(); // open only once
+    _db ??= await _init();
     return _db!;
   }
 
@@ -19,69 +19,66 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
 
     return openDatabase(
-      join(dbPath, 'student_records.db'),
-      version: 2, // bumped for Challenge 3 (migration)
+      join(dbPath, 'book_library.db'),
+      version: 2,
       onCreate: (db, version) async {
-        // Fresh installs go straight to the current schema, email included.
         await db.execute('''
-          CREATE TABLE students(
+          CREATE TABLE books(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            indexNo TEXT NOT NULL UNIQUE,
-            fullName TEXT NOT NULL,
-            programme TEXT NOT NULL,
-            level INTEGER NOT NULL,
-            email TEXT
+            title TEXT NOT NULL,
+            author TEXT NOT NULL,
+            genre TEXT NOT NULL,
+            year INTEGER NOT NULL,
+            isRead INTEGER NOT NULL DEFAULT 0
           )
         ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        // Existing installs on version 1 gain the email column
-        // without losing any of their existing records.
         if (oldVersion < 2) {
-          await db.execute('ALTER TABLE students ADD COLUMN email TEXT');
+          await db.execute(
+              'ALTER TABLE books ADD COLUMN isRead INTEGER NOT NULL DEFAULT 0');
         }
       },
     );
   }
 
   // CREATE
-  Future<int> insertStudent(Student s) async {
+  Future<int> insertBook(Book b) async {
     final db = await database;
-    return db.insert('students', s.toMap(),
+    return db.insert('books', b.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  // READ (Challenge 1: optional search term filters in SQL, not in Dart)
-  Future<List<Student>> allStudents({String? searchTerm}) async {
+  // READ — search by title or author
+  Future<List<Book>> allBooks({String? searchTerm}) async {
     final db = await database;
     final rows = (searchTerm == null || searchTerm.trim().isEmpty)
-        ? await db.query('students', orderBy: 'fullName ASC')
+        ? await db.query('books', orderBy: 'title ASC')
         : await db.query(
-            'students',
-            where: 'fullName LIKE ?',
-            whereArgs: ['%${searchTerm.trim()}%'],
-            orderBy: 'fullName ASC',
+            'books',
+            where: 'title LIKE ? OR author LIKE ?',
+            whereArgs: ['%${searchTerm.trim()}%', '%${searchTerm.trim()}%'],
+            orderBy: 'title ASC',
           );
-    return rows.map(Student.fromMap).toList();
+    return rows.map(Book.fromMap).toList();
   }
 
   // UPDATE
-  Future<int> updateStudent(Student s) async {
+  Future<int> updateBook(Book b) async {
     final db = await database;
-    return db.update('students', s.toMap(),
-        where: 'id = ?', whereArgs: [s.id]);
+    return db.update('books', b.toMap(), where: 'id = ?', whereArgs: [b.id]);
   }
 
   // DELETE
-  Future<int> deleteStudent(int id) async {
+  Future<int> deleteBook(int id) async {
     final db = await database;
-    return db.delete('students', where: 'id = ?', whereArgs: [id]);
+    return db.delete('books', where: 'id = ?', whereArgs: [id]);
   }
 
-  // Challenge 2: level statistics via rawQuery
-  Future<List<Map<String, dynamic>>> levelStats() async {
+  // Stats — books per genre, via rawQuery + GROUP BY
+  Future<List<Map<String, dynamic>>> genreStats() async {
     final db = await database;
     return db.rawQuery(
-        'SELECT level, COUNT(*) AS n FROM students GROUP BY level ORDER BY level');
+        'SELECT genre, COUNT(*) AS n FROM books GROUP BY genre ORDER BY genre');
   }
 }

@@ -1,112 +1,42 @@
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
-import 'student.dart';
+import './student.dart';
 
-void main() => runApp(const RecordsApp());
+void main() => runApp(const LibraryApp());
 
-class RecordsApp extends StatelessWidget {
-  const RecordsApp({super.key});
+class LibraryApp extends StatelessWidget {
+  const LibraryApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF3A5FCD), 
+      seedColor: const Color(0xFF6B4226), // warm library brown
       brightness: Brightness.light,
     );
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Student Attendance Records',
+      title: 'My Book Library',
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: colorScheme,
-        scaffoldBackgroundColor: const Color(0xFFF6F7FB),
-        appBarTheme: AppBarTheme(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          centerTitle: false,
-          titleTextStyle: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: colorScheme.secondary,
-          foregroundColor: Colors.white,
-          elevation: 3,
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.outlineVariant),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.primary, width: 2),
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
-        listTileTheme: ListTileThemeData(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          tileColor: Colors.white,
-        ),
-        filledButtonTheme: FilledButtonThemeData(
-          style: FilledButton.styleFrom(
-            backgroundColor: colorScheme.primary,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            textStyle:
-                const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-          ),
-        ),
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: colorScheme.primary,
-          ),
-        ),
-        cardTheme: CardThemeData(
-          color: Colors.white,
-          elevation: 1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        dialogTheme: DialogThemeData(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
+        scaffoldBackgroundColor: const Color(0xFFFAF7F2),
       ),
-      home: const StudentListPage(),
+      home: const BookListPage(),
     );
   }
 }
 
-class StudentListPage extends StatefulWidget {
-  const StudentListPage({super.key});
+class BookListPage extends StatefulWidget {
+  const BookListPage({super.key});
 
   @override
-  State<StudentListPage> createState() => _StudentListPageState();
+  State<BookListPage> createState() => _BookListPageState();
 }
 
-class _StudentListPageState extends State<StudentListPage> {
+class _BookListPageState extends State<BookListPage> {
   final _dbh = DatabaseHelper.instance;
-  List<Student> _students = [];
+  List<Book> _books = [];
   bool _loading = true;
   String? _error;
   String _searchTerm = '';
@@ -119,10 +49,10 @@ class _StudentListPageState extends State<StudentListPage> {
 
   Future<void> _refresh() async {
     try {
-      final data = await _dbh.allStudents(searchTerm: _searchTerm);
+      final data = await _dbh.allBooks(searchTerm: _searchTerm);
       if (!mounted) return;
       setState(() {
-        _students = data;
+        _books = data;
         _loading = false;
         _error = null;
       });
@@ -135,16 +65,15 @@ class _StudentListPageState extends State<StudentListPage> {
     }
   }
 
-  // Challenge 2: statistics dialog fed by a rawQuery GROUP BY
   Future<void> _showStats() async {
-    final stats = await _dbh.levelStats();
+    final stats = await _dbh.genreStats();
     if (!mounted) return;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Students per level'),
+        title: const Text('Books per genre'),
         content: stats.isEmpty
-            ? const Text('No records yet.')
+            ? const Text('No books yet.')
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: stats
@@ -153,8 +82,8 @@ class _StudentListPageState extends State<StudentListPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Level ${row['level']}'),
-                              Text('${row['n']} student(s)'),
+                              Text('${row['genre']}'),
+                              Text('${row['n']} book(s)'),
                             ],
                           ),
                         ))
@@ -162,9 +91,7 @@ class _StudentListPageState extends State<StudentListPage> {
               ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
-          ),
+              onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
         ],
       ),
     );
@@ -174,11 +101,11 @@ class _StudentListPageState extends State<StudentListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Student Attendance Records'),
+        title: const Text('My Book Library'),
         actions: [
           IconButton(
             icon: const Icon(Icons.bar_chart),
-            tooltip: 'Statistics',
+            tooltip: 'Stats',
             onPressed: _showStats,
           ),
         ],
@@ -189,7 +116,7 @@ class _StudentListPageState extends State<StudentListPage> {
             padding: const EdgeInsets.all(12),
             child: TextField(
               decoration: const InputDecoration(
-                labelText: 'Search by name',
+                labelText: 'Search by title or author',
                 prefixIcon: Icon(Icons.search),
               ),
               onChanged: (value) {
@@ -202,62 +129,37 @@ class _StudentListPageState extends State<StudentListPage> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
-                    ? Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.error_outline, size: 40),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Could not open the database:\n$_error\n\n'
-                                'If you are running on desktop or web, add '
-                                'sqflite_common_ffi (or sqflite_common_ffi_web) '
-                                'and initialize databaseFactory before runApp(). '
-                                'Otherwise, run on an Android emulator or device.',
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 12),
-                              FilledButton(
-                                onPressed: _refresh,
-                                child: const Text('Retry'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : _students.isEmpty
-                        ? const Center(child: Text('No students yet — tap +'))
+                    ? Center(child: Text('Error: $_error'))
+                    : _books.isEmpty
+                        ? const Center(child: Text('No books yet — tap +'))
                         : ListView.builder(
-                            itemCount: _students.length,
+                            itemCount: _books.length,
                             itemBuilder: (context, i) {
-                              final s = _students[i];
-                              final scheme = Theme.of(context).colorScheme;
+                              final b = _books[i];
                               return Card(
                                 margin: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 6),
                                 child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 8),
                                   leading: CircleAvatar(
-                                    backgroundColor: scheme.primaryContainer,
-                                    foregroundColor: scheme.onPrimaryContainer,
-                                    child: Text(
-                                      '${s.level ~/ 100}',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                    backgroundColor: b.isRead
+                                        ? Colors.green.shade100
+                                        : Colors.orange.shade100,
+                                    child: Icon(
+                                      b.isRead
+                                          ? Icons.check
+                                          : Icons.menu_book,
+                                      color: b.isRead
+                                          ? Colors.green
+                                          : Colors.orange,
                                     ),
                                   ),
-                                  title: Text(
-                                    s.fullName,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                  subtitle: Text('${s.indexNo} · ${s.programme}'
-                                      '${s.email != null && s.email!.isNotEmpty ? " · ${s.email}" : ""}'),
-                                  onTap: () => _openForm(existing: s),
-                                  onLongPress: () => _confirmDelete(s),
+                                  title: Text(b.title,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600)),
+                                  subtitle:
+                                      Text('${b.author} · ${b.genre} · ${b.year}'),
+                                  onTap: () => _openForm(existing: b),
+                                  onLongPress: () => _confirmDelete(b),
                                 ),
                               );
                             },
@@ -272,89 +174,88 @@ class _StudentListPageState extends State<StudentListPage> {
     );
   }
 
-  Future<void> _openForm({Student? existing}) async {
-    final indexCtrl = TextEditingController(text: existing?.indexNo ?? '');
-    final nameCtrl = TextEditingController(text: existing?.fullName ?? '');
-    final progCtrl = TextEditingController(text: existing?.programme ?? '');
-    final levelCtrl =
-        TextEditingController(text: existing?.level.toString() ?? '100');
-    final emailCtrl = TextEditingController(text: existing?.email ?? '');
+  Future<void> _openForm({Book? existing}) async {
+    final titleCtrl = TextEditingController(text: existing?.title ?? '');
+    final authorCtrl = TextEditingController(text: existing?.author ?? '');
+    final genreCtrl = TextEditingController(text: existing?.genre ?? '');
+    final yearCtrl =
+        TextEditingController(text: existing?.year.toString() ?? '2024');
+    bool isRead = existing?.isRead ?? false;
 
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(existing == null ? 'Add Student' : 'Edit Student',
-                style: Theme.of(ctx).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            TextField(
-                controller: indexCtrl,
-                decoration: const InputDecoration(labelText: 'Index number')),
-            const SizedBox(height: 10),
-            TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Full name')),
-            const SizedBox(height: 10),
-            TextField(
-                controller: progCtrl,
-                decoration: const InputDecoration(labelText: 'Programme')),
-            const SizedBox(height: 10),
-            TextField(
-                controller: levelCtrl,
-                keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'Level (100–400)')),
-            const SizedBox(height: 10),
-            TextField(
-                controller: emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                decoration:
-                    const InputDecoration(labelText: 'Email (optional)')),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () async {
-                  final student = Student(
-                    id: existing?.id,
-                    indexNo: indexCtrl.text.trim(),
-                    fullName: nameCtrl.text.trim(),
-                    programme: progCtrl.text.trim(),
-                    level: int.tryParse(levelCtrl.text) ?? 100,
-                    email: emailCtrl.text.trim().isEmpty
-                        ? null
-                        : emailCtrl.text.trim(),
-                  );
-                  if (existing == null) {
-                    await _dbh.insertStudent(student);
-                  } else {
-                    await _dbh.updateStudent(student);
-                  }
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                child: Text(existing == null ? 'Save' : 'Update'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(existing == null ? 'Add Book' : 'Edit Book',
+                  style: Theme.of(ctx).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              TextField(
+                  controller: titleCtrl,
+                  decoration: const InputDecoration(labelText: 'Title')),
+              const SizedBox(height: 10),
+              TextField(
+                  controller: authorCtrl,
+                  decoration: const InputDecoration(labelText: 'Author')),
+              const SizedBox(height: 10),
+              TextField(
+                  controller: genreCtrl,
+                  decoration: const InputDecoration(labelText: 'Genre')),
+              const SizedBox(height: 10),
+              TextField(
+                  controller: yearCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration:
+                      const InputDecoration(labelText: 'Year published')),
+              SwitchListTile(
+                title: const Text('Already read'),
+                value: isRead,
+                onChanged: (v) => setModalState(() => isRead = v),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () async {
+                    final book = Book(
+                      id: existing?.id,
+                      title: titleCtrl.text.trim(),
+                      author: authorCtrl.text.trim(),
+                      genre: genreCtrl.text.trim(),
+                      year: int.tryParse(yearCtrl.text) ?? 2024,
+                      isRead: isRead,
+                    );
+                    if (existing == null) {
+                      await _dbh.insertBook(book);
+                    } else {
+                      await _dbh.updateBook(book);
+                    }
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  },
+                  child: Text(existing == null ? 'Save' : 'Update'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
-    _refresh(); 
+    _refresh();
   }
 
-  Future<void> _confirmDelete(Student s) async {
+  Future<void> _confirmDelete(Book b) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete ${s.fullName}?'),
+        title: Text('Delete "${b.title}"?'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -366,7 +267,7 @@ class _StudentListPageState extends State<StudentListPage> {
       ),
     );
     if (ok == true) {
-      await _dbh.deleteStudent(s.id!);
+      await _dbh.deleteBook(b.id!);
       _refresh();
     }
   }
